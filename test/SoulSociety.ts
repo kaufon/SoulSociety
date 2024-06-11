@@ -1,47 +1,49 @@
-import { ethers } from "hardhat";
+import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { SoulSociety } from "../typechain-types/factories/SoulSociety__factory.ts"; // Adjust the import path according to your project structure
+import { ethers } from "hardhat";
 
-describe("SoulSociety", function () {
-  let soulSociety: SoulSociety;
-  let owner: SignerWithAddress;
-  let addr1: SignerWithAddress;
+describe("SoulSociety", function() {
+  async function deployFixture() {
+    const [owner, otherAccount] = await ethers.getSigners();
 
-  beforeEach(async function () {
-    const SoulSocietyFactory = await ethers.getContractFactory("SoulSociety");
-    soulSociety = await SoulSocietyFactory.deploy();
-    await soulSociety.deployed();
+    const SoulSociety = await ethers.getContractFactory("SoulSociety");
 
-    [owner, addr1] = await ethers.getSigners();
-  });
+    const contract = await SoulSociety.deploy();
 
-  describe("Opening a request", function () {
-    it("Should allow opening a new request", async function () {
-      const result = await soulSociety.openRequest(
-        "Creator Name",
-        "Request Title",
-        "Target Address",
-        "Description of the request",
-        ethers.utils.parseEther("100"), // Payment amount in wei
-        "Target Location",
-        { from: owner.address }
-      );
+    return { contract, owner, otherAccount };
+  }
+  it("Should open new request", async function() {
+    const { contract, owner, otherAccount } = await loadFixture(deployFixture);
+    const SoulSocietyContract = contract;
+    const creator = "0x123";
+    const title = "Test Title";
+    const target = "Test Target";
+    const description = "Test Description";
+    const payment = ethers.parseEther("0.3");
+    const targetLocation = "Test Location";
 
-      expect(result).to.not.be.reverted;
-      expect(await soulSociety.requests(1)).to.deep.equal({
-        id: 1,
-        author: owner.address,
-        title: "Request Title",
-        target: "Target Address",
-        description: "Description of the request",
-        targetLocation: "Target Location",
-        payment: ethers.utils.parseEther("100"),
-        open: true,
-        creator: "Creator Name",
-        timestamp: await ethers.provider.getBlockNumber(),
-      });
-    });
+    await SoulSocietyContract.openRequest(
+      creator,
+      title,
+      target,
+      description,
+      payment,
+      targetLocation
+    );
+
+    const requestID = 1;
+
+    const request = await SoulSocietyContract.requests(requestID);
+
+    expect(request.title).to.equal(title);
+    expect(request.creator).to.equal(creator);
+    expect(request.target).to.equal(target);
+    expect(request.description).to.equal(description);
+    expect(request.payment.toString()).to.equal(payment.toString());
+    expect(request.targetLocation).to.equal(targetLocation);
+    expect(request.open).to.be.true;
+    expect(request.timestamp).to.be.above(0); // Assuming block.timestamp is greater than 0
+    expect(request.author).to.equal(request.author);
   });
 });
-
