@@ -46,4 +46,37 @@ describe("SoulSociety", function() {
     expect(request.timestamp).to.be.above(0); // Assuming block.timestamp is greater than 0
     expect(request.author).to.equal(request.author);
   });
+  it("Should close a request", async function() {
+    const { contract, owner, otherAccount } = await loadFixture(deployFixture);
+    const SoulSocietyContract = contract;
+    const creator = "123";
+    const title = "Test title";
+    const target = "test target";
+    const description = "test description";
+    const payment = ethers.parseEther("0.3");
+    const targetLocation = "tst location";
+
+    await SoulSocietyContract.connect(owner).openRequest(
+      creator,
+      title,
+      target,
+      description,
+      payment,
+      targetLocation
+    );
+
+    const requestID = 1;
+
+    const request = await SoulSocietyContract.requests(requestID);
+    console.log("the one who oppened the request:", request.author);
+
+    expect(request.open).to.be.true;
+
+    const closerAddress = otherAccount.address;
+
+    console.log("the closer is", closerAddress);
+    await SoulSocietyContract.connect(otherAccount).closeRequest(1);
+    console.log("status after attemped closing: ", request.open)
+    expect(request.open).to.be.false;
+  });
 });

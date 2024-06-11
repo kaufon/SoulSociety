@@ -32,8 +32,25 @@ contract SoulSociety {
     open: true,
     timestamp: block.timestamp,
     author: msg.sender
-  });
-  
+  }); 
 }
+ function closeRequest(uint id) public{
+   address author = requests[id].author;
+   uint payment = requests[id].payment;
+   address killer = msg.sender;
+   require(requests[id].open == true && (killer != author),"You cant close the request buddy");
+
+   requests[id].open = false;
+
+   if(payment > 0){
+     requests[id].payment =0;
+     payable(killer).transfer(payment);
+   } 
+ }
+ function upgradeBounty(uint id) public payable {
+   require(requests[id].open == true && (msg.sender == requests[id].author));
+   requests[id].payment += msg.value;
+   
+ }
 }
 
