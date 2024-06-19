@@ -66,17 +66,10 @@ describe("SoulSociety", function() {
     );
 
     const requestID = 1;
-
-    const request = await SoulSocietyContract.requests(requestID);
-    console.log("the one who oppened the request:", request.author);
-
+    const request = await SoulSocietyContract.requests(requestID)
     expect(request.open).to.be.true;
-
-    const closerAddress = otherAccount.address;
-
-    console.log("the closer is", closerAddress);
-    await SoulSocietyContract.connect(otherAccount).closeRequest(1);
-    console.log("status after attemped closing: ", request.open)
-    expect(request.open).to.be.false;
+    await SoulSocietyContract.connect(owner).closeRequest(requestID);
+    expect(request.open).to.be.false
   });
+
 });
